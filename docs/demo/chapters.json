@@ -1,0 +1,125 @@
+{
+  "durationSeconds": 165,
+  "width": 1280,
+  "height": 800,
+  "audio": false,
+  "setup": "Executed against a new isolated demo database; dependency cache was already warm.",
+  "chapters": [
+    {
+      "title": "Introduction",
+      "seconds": 0
+    },
+    {
+      "title": "Install dependencies",
+      "seconds": 7
+    },
+    {
+      "title": "Start local services",
+      "seconds": 11
+    },
+    {
+      "title": "Generate, migrate and seed",
+      "seconds": 15
+    },
+    {
+      "title": "Test and build",
+      "seconds": 24
+    },
+    {
+      "title": "Launch applications",
+      "seconds": 54
+    },
+    {
+      "title": "Customer landing page",
+      "seconds": 69
+    },
+    {
+      "title": "Vehicle catalog",
+      "seconds": 74
+    },
+    {
+      "title": "Vehicle details",
+      "seconds": 78
+    },
+    {
+      "title": "Configurator and authoritative pricing",
+      "seconds": 82
+    },
+    {
+      "title": "Paint selection",
+      "seconds": 86
+    },
+    {
+      "title": "Invalid option combination",
+      "seconds": 89
+    },
+    {
+      "title": "Valid configuration",
+      "seconds": 93
+    },
+    {
+      "title": "Schematic interior and environment",
+      "seconds": 99
+    },
+    {
+      "title": "Customer sign-in",
+      "seconds": 102
+    },
+    {
+      "title": "Save configuration",
+      "seconds": 108
+    },
+    {
+      "title": "Signed shared configuration",
+      "seconds": 111
+    },
+    {
+      "title": "Saved garage",
+      "seconds": 116
+    },
+    {
+      "title": "Dealer enquiry",
+      "seconds": 120
+    },
+    {
+      "title": "Enquiry received",
+      "seconds": 125
+    },
+    {
+      "title": "Admin sign-in",
+      "seconds": 128
+    },
+    {
+      "title": "Admin overview",
+      "seconds": 132
+    },
+    {
+      "title": "Submitted lead in administration",
+      "seconds": 135
+    },
+    {
+      "title": "Catalog administration",
+      "seconds": 139
+    },
+    {
+      "title": "Archive catalog entry",
+      "seconds": 143
+    },
+    {
+      "title": "Price management",
+      "seconds": 145
+    },
+    {
+      "title": "Audit trail",
+      "seconds": 148
+    },
+    {
+      "title": "OpenAPI documentation",
+      "seconds": 151
+    },
+    {
+      "title": "Demo complete",
+      "seconds": 156
+    }
+  ]
+}

@@ -4,6 +4,16 @@ A modular automotive configurator and virtual showroom platform with customer an
 
 The runnable web demonstrator uses a clearly labelled schematic vehicle. Unreal project source and Pixel Streaming control-plane code are included; a licensed vehicle scene and real GPU/WebRTC validation are still required. See the [feature completion matrix](docs/completion-matrix.md) for precise status.
 
+## Demo video
+
+[![Watch the setup-to-execution demo](docs/demo/demo-preview.gif)](docs/demo/automotive-xr-demo.mp4)
+
+**[Open/download the full demo — MP4, approximately 3 minutes](docs/demo/automotive-xr-demo.mp4)**
+
+A captioned, silent recording of real local setup, database migrations and seed data, tests/builds, customer configuration, sign-in, save/share, dealer enquiries and admin execution. Uses synthetic data and the labelled schematic vehicle preview.
+
+[Recording details and chapters](docs/demo/README.md) · [Copy-ready GitHub About settings and topics](docs/github-about.md)
+
 ## Start locally
 
 Prerequisites: Node 22+, pnpm 11.25.0 and Docker Compose v2. From the existing checkout:
