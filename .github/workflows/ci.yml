@@ -3,6 +3,28 @@ on: [push, pull_request]
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: automotive
+          POSTGRES_PASSWORD: ci_only_password
+          POSTGRES_DB: automotive
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U automotive -d automotive"
+          --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://automotive:ci_only_password@localhost:5432/automotive
+      REDIS_URL: redis://localhost:6379
+      NEXT_PUBLIC_OIDC_ISSUER: http://127.0.0.1:5010
+      NEXT_PUBLIC_OIDC_CLIENT_ID: automotive-xr-local
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -12,6 +34,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+      - run: pnpm db:migrate
+      - run: pnpm db:seed
+      - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm test:integration
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: |
+            test-results/
+            docs/design/*.png

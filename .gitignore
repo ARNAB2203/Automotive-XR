@@ -12,3 +12,9 @@ unreal/**/Intermediate/
 unreal/**/Saved/
 
 *.tsbuildinfo
+.local/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+__pycache__/
+*.pyc

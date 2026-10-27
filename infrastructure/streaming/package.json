@@ -1,0 +1,17 @@
+{
+  "name": "@xr/streaming-gateway",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node gateway.mjs",
+    "build": "node --check gateway.mjs",
+    "typecheck": "node --check gateway.mjs",
+    "test:integration": "node --test gateway.test.mjs"
+  },
+  "dependencies": {
+    "redis": "^5.0.0",
+    "ws": "^8.18.0",
+    "jose": "^6.0.0"
+  }
+}

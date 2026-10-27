@@ -1,0 +1,16 @@
+{
+  "iceServers": [
+    {
+      "urls": [
+        "stun:your-stun-host.example:3478"
+      ]
+    },
+    {
+      "urls": [
+        "turns:your-turn-host.example:5349?transport=tcp"
+      ],
+      "username": "REPLACE_WITH_SHORT_LIVED_USERNAME",
+      "credential": "INJECT_AT_RUNTIME_NEVER_COMMIT"
+    }
+  ]
+}
