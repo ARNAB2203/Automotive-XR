@@ -1,0 +1,36 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"],
+      "env": ["DATABASE_URL", "API_URL", "NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_*"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "OIDC_*",
+        "SHARE_SIGNING_KEY",
+        "NEXT_PUBLIC_*",
+        "CORS_ORIGINS",
+        "API_PORT",
+        "ALLOCATOR_*",
+        "STREAM_*",
+        "GPU_CAPACITY",
+        "OTEL_*",
+        "SENTRY_DSN"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "@xr/streaming-gateway#build": {
+      "outputs": []
+    }
+  }
+}

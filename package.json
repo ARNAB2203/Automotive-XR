@@ -1,0 +1,32 @@
+{
+  "name": "automotive-xr",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "db:generate": "node scripts/generate-client.mjs",
+    "db:migrate": "pnpm --filter @xr/api exec tsx prisma/migrate.ts",
+    "db:seed": "pnpm --filter @xr/api exec tsx prisma/seed.ts",
+    "lint": "eslint apps packages tests playwright.config.ts",
+    "format": "prettier --write apps packages docs scripts *.json *.yaml .github/workflows/*.yml tests playwright.config.ts eslint.config.mjs",
+    "format:check": "prettier --check apps packages docs scripts *.json *.yaml .github/workflows/*.yml tests playwright.config.ts eslint.config.mjs",
+    "test:e2e": "playwright test",
+    "test:integration": "pnpm --filter @xr/api test:integration && pnpm --filter @xr/streaming-gateway test:integration",
+    "dev:local": "node scripts/dev-local.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.64.1",
+    "eslint": "^10.13.0",
+    "prettier": "^3.5.0",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.72.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,376 @@
+import { Inject } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  NotFoundException,
+} from "@nestjs/common";
+import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { Role, Prisma } from "@prisma/client";
+import { z } from "zod";
+import { vehicleSchema } from "@xr/types";
+import { AuthRequest, Roles } from "./auth";
+import { Db } from "./db";
+const adminRoles = [Role.TENANT_ADMIN, Role.PLATFORM_ADMIN];
+const salesRoles = [
+  ...adminRoles,
+  Role.DEALER_MANAGER,
+  Role.SALES_REPRESENTATIVE,
+];
+const idSchema = z.string().uuid();
+@ApiTags("Administration")
+@ApiBearerAuth()
+@Controller("admin")
+@Roles(...adminRoles)
+export class AdminController {
+  constructor(@Inject(Db) private db: Db) {}
+  private async audit(
+    tx: Prisma.TransactionClient,
+    req: AuthRequest,
+    action: string,
+    entityId: string,
+  ) {
+    await tx.auditEvent.create({
+      data: {
+        tenantId: req.identity.tenantId,
+        subject: req.identity.subject,
+        action,
+        entityId,
+      },
+    });
+  }
+  @Get("vehicles") vehicles(@Req() req: AuthRequest) {
+    return this.db.vehicleModel.findMany({
+      where: { tenantId: req.identity.tenantId },
+      include: { options: true, variants: true, rules: true },
+    });
+  }
+  @Post("vehicles") async createVehicle(
+    @Req() req: AuthRequest,
+    @Body() body: unknown,
+  ) {
+    const data = vehicleSchema.parse(body);
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.vehicleModel.create({
+        data: { ...data, tenantId: req.identity.tenantId },
+      });
+      await this.audit(tx, req, "vehicle.created", item.id);
+      return item;
+    });
+  }
+  @Put("vehicles/:id") async updateVehicle(
+    @Req() req: AuthRequest,
+    @Param("id") id: string,
+    @Body() body: unknown,
+  ) {
+    const data = vehicleSchema.parse(body);
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.vehicleModel.update({
+        where: {
+          tenantId_id: {
+            tenantId: req.identity.tenantId,
+            id: idSchema.parse(id),
+          },
+        },
+        data,
+      });
+      await this.audit(tx, req, "vehicle.updated", id);
+      return item;
+    });
+  }
+  @Delete("vehicles/:id") async deleteVehicle(
+    @Req() req: AuthRequest,
+    @Param("id") id: string,
+  ) {
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.vehicleModel.update({
+        where: {
+          tenantId_id: {
+            tenantId: req.identity.tenantId,
+            id: idSchema.parse(id),
+          },
+        },
+        data: { active: false },
+      });
+      await this.audit(tx, req, "vehicle.archived", id);
+      return item;
+    });
+  }
+  private async vehicle(req: AuthRequest, id: string) {
+    if (
+      !(await this.db.vehicleModel.findFirst({
+        where: { tenantId: req.identity.tenantId, id: idSchema.parse(id) },
+      }))
+    )
+      throw new NotFoundException("Vehicle not found");
+  }
+  @Post("vehicles/:id/options") async option(
+    @Req() req: AuthRequest,
+    @Param("id") vehicleId: string,
+    @Body() body: unknown,
+  ) {
+    await this.vehicle(req, vehicleId);
+    const input = z
+      .object({
+        code: z
+          .string()
+          .regex(/^[a-z0-9-]+$/)
+          .max(80),
+        name: z.string().min(1).max(100),
+        category: z.enum(["paint", "wheels", "interior", "trim"]),
+        swatch: z
+          .string()
+          .regex(/^#[0-9a-fA-F]{6}$/)
+          .optional(),
+      })
+      .strict()
+      .parse(body);
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.vehicleOption.upsert({
+        where: {
+          tenantId_vehicleId_code: {
+            tenantId: req.identity.tenantId,
+            vehicleId,
+            code: input.code,
+          },
+        },
+        create: { ...input, tenantId: req.identity.tenantId, vehicleId },
+        update: input,
+      });
+      await this.audit(tx, req, "option.upserted", item.id);
+      return item;
+    });
+  }
+  @Post("vehicles/:id/variants") async variant(
+    @Req() req: AuthRequest,
+    @Param("id") vehicleId: string,
+    @Body() body: unknown,
+  ) {
+    await this.vehicle(req, vehicleId);
+    const input = z
+      .object({ name: z.string().min(1).max(100) })
+      .strict()
+      .parse(body);
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.vehicleVariant.create({
+        data: { ...input, vehicleId, tenantId: req.identity.tenantId },
+      });
+      await this.audit(tx, req, "variant.created", item.id);
+      return item;
+    });
+  }
+  @Post("vehicles/:id/rules") async rule(
+    @Req() req: AuthRequest,
+    @Param("id") vehicleId: string,
+    @Body() body: unknown,
+  ) {
+    await this.vehicle(req, vehicleId);
+    const input = z
+      .object({
+        optionCode: z.string().max(80),
+        excludesCode: z.string().max(80),
+        message: z.string().min(1).max(200),
+      })
+      .strict()
+      .parse(body);
+    const count = await this.db.vehicleOption.count({
+      where: {
+        tenantId: req.identity.tenantId,
+        vehicleId,
+        code: { in: [input.optionCode, input.excludesCode] },
+      },
+    });
+    if (count !== 2)
+      throw new NotFoundException("Choose two distinct vehicle options");
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.optionCompatibilityRule.create({
+        data: { ...input, tenantId: req.identity.tenantId, vehicleId },
+      });
+      await this.audit(tx, req, "rule.created", item.id);
+      return item;
+    });
+  }
+  @Get("price-books") priceBooks(@Req() req: AuthRequest) {
+    return this.db.priceBook.findMany({
+      where: { tenantId: req.identity.tenantId },
+      include: { entries: true },
+    });
+  }
+  @Put("price-books/:id/entries") async prices(
+    @Req() req: AuthRequest,
+    @Param("id") id: string,
+    @Body() body: unknown,
+  ) {
+    const input = z
+      .object({
+        code: z.string().min(1).max(100),
+        amount: z.number().int().min(0).max(1000000000),
+      })
+      .strict()
+      .parse(body);
+    if (
+      !(await this.db.priceBook.findUnique({
+        where: {
+          tenantId_id: {
+            tenantId: req.identity.tenantId,
+            id: idSchema.parse(id),
+          },
+        },
+      }))
+    )
+      throw new NotFoundException("Price book not found");
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.priceBookEntry.upsert({
+        where: {
+          tenantId_priceBookId_code: {
+            tenantId: req.identity.tenantId,
+            priceBookId: id,
+            code: input.code,
+          },
+        },
+        create: { ...input, tenantId: req.identity.tenantId, priceBookId: id },
+        update: { amount: input.amount },
+      });
+      await this.audit(tx, req, "price.updated", item.id);
+      return item;
+    });
+  }
+  @Roles(...salesRoles) @Get("leads") leads(@Req() req: AuthRequest) {
+    return this.db.customerLead.findMany({
+      where: { tenantId: req.identity.tenantId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+  }
+  @Roles(...salesRoles) @Get("dealers") dealers(@Req() req: AuthRequest) {
+    return this.db.dealer.findMany({
+      where: { tenantId: req.identity.tenantId },
+    });
+  }
+  @Post("dealers") async dealer(
+    @Req() req: AuthRequest,
+    @Body() body: unknown,
+  ) {
+    const data = z
+      .object({
+        name: z.string().min(2).max(100),
+        city: z.string().min(2).max(100),
+      })
+      .strict()
+      .parse(body);
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.dealer.create({
+        data: { ...data, tenantId: req.identity.tenantId },
+      });
+      await this.audit(tx, req, "dealer.created", item.id);
+      return item;
+    });
+  }
+  @Roles(...salesRoles) @Get("configurations") configurations(
+    @Req() req: AuthRequest,
+  ) {
+    return this.db.vehicleConfiguration.findMany({
+      where: { tenantId: req.identity.tenantId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+  }
+  @Get("users") users(@Req() req: AuthRequest) {
+    return this.db.user.findMany({
+      where: { tenantId: req.identity.tenantId },
+      include: { roles: true },
+      take: 100,
+    });
+  }
+  @Put("users") async user(@Req() req: AuthRequest, @Body() body: unknown) {
+    const data = z
+      .object({
+        subject: z.string().min(1).max(200),
+        email: z.string().email(),
+        roles: z.array(z.nativeEnum(Role)).min(1).max(5),
+      })
+      .strict()
+      .parse(body);
+    if (
+      data.roles.includes(Role.PLATFORM_ADMIN) &&
+      !req.identity.roles.includes(Role.PLATFORM_ADMIN)
+    )
+      throw new (await import("@nestjs/common")).ForbiddenException(
+        "Platform role required",
+      );
+    return this.db.$transaction(async (tx) => {
+      const item = await tx.user.upsert({
+        where: {
+          tenantId_subject: {
+            tenantId: req.identity.tenantId,
+            subject: data.subject,
+          },
+        },
+        create: {
+          tenantId: req.identity.tenantId,
+          subject: data.subject,
+          email: data.email,
+        },
+        update: { email: data.email },
+      });
+      await tx.userRole.deleteMany({ where: { userId: item.id } });
+      await tx.userRole.createMany({
+        data: [...new Set(data.roles)].map((role) => ({
+          userId: item.id,
+          role,
+        })),
+      });
+      await this.audit(tx, req, "user.roles.updated", item.id);
+      return { id: item.id };
+    });
+  }
+  @Get("audit") auditLog(@Req() req: AuthRequest) {
+    return this.db.auditEvent.findMany({
+      where: { tenantId: req.identity.tenantId },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    });
+  }
+  @Roles(...salesRoles) @Get("analytics") async analytics(
+    @Req() req: AuthRequest,
+  ) {
+    const where = { tenantId: req.identity.tenantId };
+    return {
+      leads: await this.db.customerLead.count({ where }),
+      configurations: await this.db.vehicleConfiguration.count({ where }),
+      vehicles: await this.db.vehicleModel.count({
+        where: { ...where, active: true },
+      }),
+    };
+  }
+  @Get("sessions") sessions(@Req() req: AuthRequest) {
+    return this.db.streamingSession.findMany({
+      where: { tenantId: req.identity.tenantId },
+      take: 100,
+    });
+  }
+  @Roles(Role.PLATFORM_ADMIN) @Get("tenants") tenants() {
+    return this.db.tenant.findMany();
+  }
+  @Roles(Role.PLATFORM_ADMIN) @Post("tenants") createTenant(
+    @Body() body: unknown,
+  ) {
+    return this.db.tenant.create({
+      data: z
+        .object({
+          slug: z
+            .string()
+            .regex(/^[a-z0-9-]+$/)
+            .max(80),
+          name: z.string().min(2).max(100),
+        })
+        .strict()
+        .parse(body),
+    });
+  }
+}

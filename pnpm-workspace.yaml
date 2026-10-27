@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+  - infrastructure/streaming
+allowBuilds:
+  "@prisma/client": false
+  "@prisma/engines": false
+  prisma: true
+  esbuild: true
+  "@nestjs/core": false
+  "@scarf/scarf": false
+  protobufjs: true
