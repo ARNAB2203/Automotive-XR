@@ -1,0 +1,22 @@
+{
+  "name": "automotive-xr",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "db:generate": "pnpm --filter @xr/api exec prisma generate",
+    "db:migrate": "pnpm --filter @xr/api exec tsx prisma/migrate.ts",
+    "db:seed": "pnpm --filter @xr/api exec tsx prisma/seed.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.0",
+    "prettier": "^3.5.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

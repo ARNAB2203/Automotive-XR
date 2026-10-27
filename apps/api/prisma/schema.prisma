@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "client"
+}
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+enum Role {
+  PLATFORM_ADMIN
+  TENANT_ADMIN
+  DEALER_MANAGER
+  SALES_REPRESENTATIVE
+  CUSTOMER
+}
+model Tenant {
+ id String @id @default(uuid()) @db.Uuid
+ slug String @unique
+ name String
+ users User[]
+ vehicles VehicleModel[]
+ dealers Dealer[]
+ leads CustomerLead[]
+ configurations VehicleConfiguration[]
+ sessions StreamingSession[]
+ audits AuditEvent[]
+ priceBooks PriceBook[]
+}
+model User {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ subject String
+ email String
+ tenant Tenant @relation(fields:[tenantId], references:[id])
+ roles UserRole[]
+ configurations VehicleConfiguration[]
+ @@unique([tenantId, subject])
+ @@unique([tenantId,id])
+}
+model UserRole {
+ id String @id @default(uuid()) @db.Uuid
+ userId String @db.Uuid
+ role Role
+ user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+ @@unique([userId,role])
+}
+model VehicleModel {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ slug String
+ name String
+ description String
+ active Boolean @default(true)
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ variants VehicleVariant[]
+ options VehicleOption[]
+ rules OptionCompatibilityRule[]
+ configurations VehicleConfiguration[]
+ @@unique([tenantId,slug])
+ @@unique([tenantId,id])
+}
+model VehicleVariant {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ vehicleId String @db.Uuid
+ name String
+ vehicle VehicleModel @relation(fields:[tenantId,vehicleId],references:[tenantId,id])
+ @@unique([tenantId,id])
+}
+model VehicleOption {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ vehicleId String @db.Uuid
+ code String
+ name String
+ category String
+ swatch String?
+ vehicle VehicleModel @relation(fields:[tenantId,vehicleId],references:[tenantId,id])
+ @@unique([tenantId,vehicleId,code])
+ @@unique([tenantId,id])
+}
+model OptionCompatibilityRule {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ vehicleId String @db.Uuid
+ optionCode String
+ excludesCode String
+ message String
+ vehicle VehicleModel @relation(fields:[tenantId,vehicleId],references:[tenantId,id])
+ @@index([tenantId,vehicleId])
+}
+model PriceBook {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ currency String @default("USD")
+ active Boolean @default(true)
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ entries PriceBookEntry[]
+ @@unique([tenantId,id])
+}
+model PriceBookEntry {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ priceBookId String @db.Uuid
+ code String
+ amount Int
+ priceBook PriceBook @relation(fields:[tenantId,priceBookId],references:[tenantId,id])
+ @@unique([tenantId,priceBookId,code])
+}
+model VehicleConfiguration {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ vehicleId String @db.Uuid
+ userId String @db.Uuid
+ options Json
+ total Int
+ currency String
+ shareId String @unique
+ createdAt DateTime @default(now())
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ user User @relation(fields:[tenantId,userId],references:[tenantId,id])
+ vehicle VehicleModel @relation(fields:[tenantId,vehicleId],references:[tenantId,id])
+ @@index([tenantId,userId])
+}
+model Dealer {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ name String
+ city String
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ leads CustomerLead[]
+ @@unique([tenantId,id])
+}
+model CustomerLead {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ dealerId String @db.Uuid
+ type String
+ email String
+ name String
+ consent Boolean
+ preferredDate DateTime?
+ createdAt DateTime @default(now())
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ dealer Dealer @relation(fields:[tenantId,dealerId],references:[tenantId,id])
+ @@index([tenantId,createdAt])
+}
+model StreamingSession {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ subject String
+ status String
+ expiresAt DateTime
+ lastHeartbeat DateTime @default(now())
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ @@index([tenantId,status,expiresAt])
+}
+model AuditEvent {
+ id String @id @default(uuid()) @db.Uuid
+ tenantId String @db.Uuid
+ subject String
+ action String
+ entityId String
+ createdAt DateTime @default(now())
+ tenant Tenant @relation(fields:[tenantId],references:[id])
+ @@index([tenantId,createdAt])
+}
