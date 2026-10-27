@@ -1,18 +1,17 @@
 # Feature completion matrix
 
-This file is updated as implementation and validation progress. “Source” does not mean runtime validated.
+| Phase / feature | Implementation and evidence                                                                                                                                                                             | Remaining work                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Foundation    | pnpm/Turbo workspaces, TypeScript, ESLint, Prettier, Compose, CI source; local build/type checks                                                                                                        | Hosted CI run not observed                                                                                                             |
+| 1 Database      | All 15 requested Prisma models, indexes, composite tenant FKs, generated SQL, checksum migration runner and idempotent seed                                                                             | Native Prisma deploy replaced by documented runner; DB RLS not implemented                                                             |
+| 2 Backend       | Tenant catalog, variants/options, compatible defaults, validation/pricing, configurations/share, dealers/leads, OIDC/RBAC and audit                                                                     | Full OpenAPI input schemas, pagination, share expiry/revocation, retention                                                             |
+| 3 Customer      | All requested routes, responsive UI, PKCE sign-in, backend pricing, save/share/garage and enquiry forms                                                                                                 | Schematic fallback, no immersive real showroom; no detailed asset                                                                      |
+| 4 Admin         | Catalog create/update/archive, option upsert, variant/rule CRUD, price-book lifecycle and entry updates, dealer CRUD, lead/config lookup, users/roles, tenants, audit, session list and count analytics | Dealer-specific lead assignments, conversion funnel tracking and user deletion workflow                                                |
+| 5 Unreal        | UE 5.5 C++ project, primitive-scene Editor generator, camera interpolation, material/wheel/cabin state, environment presets, Variant Manager hooks and versioned command handler                        | C++ compile, generated map, Blueprint/data-channel bindings, authored Variant Sets, licensed vehicle and animations require UE machine |
+| 6 Streaming     | Epic browser library, session API, fixed capacity with DB lock, Redis allocator, signed signaling proxy, heartbeat/expiry/cleanup                                                                       | Real GPU/WebRTC/TURN integration and failure testing; worker health/discovery; no autoscaling                                          |
+| 7 Tests         | Vitest, real PostgreSQL/OIDC API tests, Redis/WebSocket integration test, Chromium customer/admin/mobile tests                                                                                          | Real UE conformance and GPU/media/security/load testing                                                                                |
+| 8 Delivery      | Docker build targets, local service Compose, AWS Terraform HTTP ECS/ALB/ECR/S3/logging source, build/deployment/security docs                                                                           | AWS apply/deployment not performed; VPC/RDS/Redis/ACM/DNS/secrets and GPU fleet supplied by operators                                  |
+| Monitoring      | Structured request logs, opt-in OTLP HTTP spans and sanitized Sentry capture                                                                                                                            | Collector delivery and production alerting unverified                                                                                  |
+| Figma/design    | Editable SVG desktop frames, DTCG-style tokens, component/flow spec and running-app screenshots                                                                                                         | Native Figma file requires Figma access/import                                                                                         |
 
-| Phase | Deliverable | Status |
-|---|---|---|
-| 1 | pnpm/Turbo, Next.js customer/admin, NestJS API, Compose, CI source | Implemented; local checks recorded in validation.md |
-| 1 | Prisma schema, initial migration, seed | Validation in progress |
-| 2 | Catalog, pricing, compatibility, identity, configurations, leads | Pending |
-| 3 | Customer routes and viewer adapters | Pending |
-| 4 | Admin management workflows | Pending |
-| 5 | Unreal licensed vehicle scene | Requires Unreal Editor and licensed vehicle asset |
-| 6 | Real GPU / WebRTC integration | Requires GPU runtime and signaling deployment |
-| 7 | Integration, security, browser tests | Pending |
-| 8 | Architecture, HLD/LLD, build docs | In progress |
-| Design | Native Figma document | No Figma tool available; portable artifacts planned |
-
-The full MVP definition of done has not been met until the licensed Unreal scene and real GPU streaming tests pass.
+The complete MVP definition of done is **not met**: a licensed vehicle scene and a compatible real GPU Pixel Streaming runtime have not been tested. Source code, local application tests and infrastructure validation do not establish production deployment or GPU readiness.

@@ -2,7 +2,7 @@
 
 ## Decisions
 
-The checkout root is the monorepo root; an extra nested `automotive-xr` directory adds no isolation. Next.js customer and administrative clients call a NestJS API. PostgreSQL is the commercial system of record. Prisma uses its supported JavaScript engine with the PostgreSQL adapter, avoiding platform-specific query binaries. Redis is provisioned for distributed session allocation and rate limiting; until integrated, single-process limits must not be presented as distributed protection.
+The checkout root is the monorepo root; an extra nested `automotive-xr` directory adds no isolation. Next.js customer and administrative clients call a NestJS API. PostgreSQL is the commercial system of record. Prisma uses its supported JavaScript engine with the PostgreSQL adapter, avoiding platform-specific query binaries. Redis backs atomic fixed-pool allocation and signaling session leases. API admission uses a PostgreSQL advisory lock. HTTP rate limits remain per process and must not be presented as distributed protection.
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,7 @@ flowchart LR
  API -. allocation adapter .-> Allocator[GPU session allocator]
  Customer -. WebRTC .-> UE[Unreal AutomotiveXR]
  Allocator -. signaling .-> UE
- API -. future cache .-> Redis[(Redis)]
+ Allocator --> Redis[(Redis)]
  UE --> Assets[Licensed assets / S3]
 ```
 
